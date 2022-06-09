@@ -1,5 +1,5 @@
 
-from game_constants import FLEET_DIM
+from rules import FLEET_DIM
 
 #A container class for ships.
 class Fleet:

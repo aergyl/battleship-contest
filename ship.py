@@ -1,5 +1,5 @@
 
-from game_constants import BOARD_DIM
+from rules import BOARD_DIM
 
 #A rectangle-shaped ship class with collision detection etc.
 class Ship:
