@@ -1,4 +1,3 @@
-
 #The number of squares in the x-direction and the y-direction, respectively.
 BOARD_DIM = (10, 10)
 

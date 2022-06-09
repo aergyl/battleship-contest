@@ -1,4 +1,3 @@
-
 from constants import *
 
 #A rectangle-shaped ship class with collision detection etc.

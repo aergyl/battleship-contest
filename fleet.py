@@ -1,4 +1,3 @@
-
 from constants import *
 
 #A container class for ships.
