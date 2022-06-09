@@ -1,5 +1,5 @@
 
-from rules import FLEET_DIM
+from constants import *
 
 #A container class for ships.
 class Fleet:
@@ -19,13 +19,13 @@ class Fleet:
 		for ship in self.ships:
 			if not ship.validate_position():
 				return False
-		for i in range(len(ships)):
-			for j in range(i, len(ships)):
-				if not ships[i].validate_adjacent(ships[j]):
+		for i in range(len(self.ships)):
+			for j in range(i + 1, len(self.ships)):
+				if not self.ships[i].validate_adjacent(self.ships[j]):
 					return False
 		return True
 
-	#Checks if the ships are of the correct dimensions.
+	#Checks if the ships in the fleet are of the correct dimensions.
 	def validate_dim(self):
 		count_dim = {}
 		for ship in self.ships:
@@ -36,14 +36,30 @@ class Fleet:
 					count_dim[ship.dim] = 1
 			else:
 				return False
-		if count_dim == SHIPS_DIM:
+		if count_dim == FLEET_DIM:
 			return True
 		else:
 			return False
 
-	#Checks if any ship in the fleet is hit by a shot targeting (x, y).
-	def is_hit_by(self, x, y):
+	#This should be called before starting the game, but only after a successful validation.
+	def setup(self):
 		for ship in self.ships:
-			if ship.is_hit_by(x, y):
+			ship.setup()
+
+	#Interacts with a shot targeting (x, y) and returns a signal indicating what happened.
+	def get_hit_by(self, x, y):
+		for ship in self.ships:
+			signal = ship.get_hit_by(x, y)
+			if signal != SIGNAL_MISS:
+				if self.is_alive():
+					return signal
+				else:
+					return SIGNAL_LOST
+		return SIGNAL_MISS
+
+	#Checks if there are any ships alive in the fleet.
+	def is_alive(self):
+		for ship in self.ships:
+			if ship.is_alive():
 				return True
 		return False

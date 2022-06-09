@@ -10,3 +10,15 @@ FLEET_DIM = {
 	(4, 1): 1,
 	(5, 1): 1
 }
+
+#This is one way of ensuring that the game eventually ends.
+MAX_NUM_OF_SHOTS = 150
+
+#If set to False, SIGNAL_SUNK will be replaced with SIGNAL_HIT.
+ANNOUNCE_WHEN_SUNK = False
+
+#Signals used for communication.
+SIGNAL_MISS = 0
+SIGNAL_HIT = 1
+SIGNAL_SUNK = 2
+SIGNAL_LOST = 3
