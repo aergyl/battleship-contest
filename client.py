@@ -22,6 +22,8 @@ def result(r):
 def opp_shot(row, col):
     print(f"Motståndaren sköt på {row} {col}.")
 
+def game_over(r):
+    print(f"Spelet slut. Jag {r}.")
 
 
 
@@ -33,7 +35,10 @@ from websockets import connect
 async def main():
     async with connect("ws://localhost:1234") as websocket:  # byt ut mot serverns ip
         await websocket.send(f"Player_{randint(100, 999)}")
-        assert (await websocket.recv()) == "ok"
+        r = await websocket.recv()
+        if r != "ok":
+            print(r)
+            return
         while True:
             msg = await websocket.recv()
             assert(msg[0:5] == "play ")
@@ -44,18 +49,28 @@ async def main():
             ships = place_ships()
             for ship in ships:
                 await websocket.send(" ".join(map(str, ship)))
-            assert (await websocket.recv()) == "ok"
+            res = await websocket.recv()
+            if res != "ok" and res != "won":
+                print(res)
+                return
             print("Placering godkänd")
             turn = 1
-            while 1:
+            while res != "won" and res != "lost":
                 if(turn == pnum):
                     r, c = shoot()
                     await websocket.send(f"{r} {c}")
                     res = await websocket.recv()
+                    if(res == "won"):
+                        break
                     result(res)
                 else:
-                    r, c = map(int, (await websocket.recv()).split())
+                    res = await websocket.recv()
+                    if(res == "won"):
+                        break
+                    r, c = map(int, res.split())
+                    res = await websocket.recv()
                     opp_shot(r, c)
                 turn ^= 3
+            game_over(res)
 
 asyncio.run(main())
