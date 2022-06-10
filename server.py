@@ -2,7 +2,6 @@ import asyncio
 from websockets import serve, exceptions
 import random
 from constants import *
-from ship import Ship
 from fleet import Fleet
 
 class Player:
@@ -17,7 +16,7 @@ class Player:
         fleet = Fleet()
         for i in range(sum(FLEET_DIM.values())):
             row1, col1, row2, col2 = map(int, (await self.websocket.recv()).split())
-            fleet.add_ship(Ship(col1, row1, col2, row2))  # assuming pos x = down
+            fleet.add_ship(col1, row1, col2, row2)  # assuming pos x = down
         if(not fleet.validate()):
             self.websocket.send("invalid")
             return None

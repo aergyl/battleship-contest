@@ -5,10 +5,6 @@ class Ship:
 
 	#Creates a ship by specifying one of its diagonals from (x1, y1) to (x2, y2).
 	def __init__(self, x1, y1, x2, y2):
-		assert type(x1) == int
-		assert type(y1) == int
-		assert type(x2) == int
-		assert type(y2) == int
 
 		#Standardize the representation of the rectangle.
 		self.rect_x = (min(x1, x2), max(x1, x2))
@@ -40,20 +36,16 @@ class Ship:
 	#This should be called before starting the game, but only after a successful validation.
 	def setup(self):
 
-		#Store all of the squares that the ship occupy, along with a boolean representing whether that part is hit or not.
+		#Store all of the squares that the ship occupy, along with a boolean representing whether that part is alive or not.
 		self.squares = {}
 		for x in range(self.rect_x[0], self.rect_x[1] + 1):
 			for y in range(self.rect_y[0], self.rect_y[1] + 1):
-				self.squares[(x, y)] = False
+				self.squares[x, y] = True
 
 	#Interacts with a shot targeting (x, y) and returns a signal indicating what happened.
 	def get_hit_by(self, x, y):
-		assert type(x) == int
-		assert type(y) == int
-
-		square = (x, y)
-		if square in self.squares:
-			self.squares[square] = True
+		if (x, y) in self.squares:
+			self.squares[x, y] = False
 			if self.is_alive() or not ANNOUNCE_WHEN_SUNK:
 				return SIGNAL_HIT
 			else:
@@ -63,7 +55,4 @@ class Ship:
 
 	#Checks if there are non-hit squares on the ship.
 	def is_alive(self):
-		for square in self.squares:
-			if not self.squares[square]:
-				return True
-		return False
+		return any(self.squares.values())

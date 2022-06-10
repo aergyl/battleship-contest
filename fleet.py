@@ -1,4 +1,5 @@
 from constants import *
+from ship import Ship
 
 #A container class for ships.
 class Fleet:
@@ -8,8 +9,9 @@ class Fleet:
 		self.ships = []
 
 	#Adds a ship to the fleet.
-	def add_ship(self, ship):
-		self.ships.append(ship)
+	def add_ship(self, x1, y1, x2, y2):
+		assert type(x1) == type(y1) == type(x2) == type(y2) == int
+		self.ships.append(Ship(x1, y1, x2, y2))
 
 	#Checks if the fleet follow all of the rules.
 	def validate(self):
@@ -47,6 +49,7 @@ class Fleet:
 
 	#Interacts with a shot targeting (x, y) and returns a signal indicating what happened.
 	def get_hit_by(self, x, y):
+		assert type(x) == type(y) == int
 		for ship in self.ships:
 			signal = ship.get_hit_by(x, y)
 			if signal != SIGNAL_MISS:
