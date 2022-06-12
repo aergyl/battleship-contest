@@ -1,5 +1,4 @@
 import asyncio
-import traceback
 from websockets import serve, exceptions
 import random
 from constants import *
@@ -24,19 +23,20 @@ class Player:
             self.playing = True
             self.pnum = pnum
             await self.websocket.send("play " + opp.name)
+            self.websocket.messages.clear()  # in case there are old messages from a timeout
             await self.websocket.send(str(pnum))
             fleet = Fleet()
-            for i in range(sum(FLEET_DIM.values())):
-                r = await asyncio.wait_for(self.websocket.recv(), timeout=1)
-                try:
-                    row1, col1, row2, col2 = map(int, r.split())
+            r = await asyncio.wait_for(self.websocket.recv(), timeout=TIMELIMIT_PLACE)
+            try:
+                r = list(map(int, r.split()))
+                for i in range(0, len(r), 4):
+                    row1, col1, row2, col2 = r[i : i+4]
                     fleet.add_ship(col1, row1, col2, row2)  # assuming pos x = down
-                except:
-                    await self.trysend("invalid ship")
-                    raise
-            if(not fleet.validate()):
-                self.trysend("invalid fleet")
-                raise
+                if(not fleet.validate() or len(r) != 4 * sum(FLEET_DIM.values())):
+                    raise Exception()
+            except:
+                await self.trysend("invalid fleet")
+                return None
             fleet.setup()
             return fleet
         except:
@@ -60,13 +60,11 @@ async def play_game(p):
     if(fleets[2] is None): return 1
     await p[1].trysend("ok")
     await p[2].trysend("ok")
+    moves = 0
     turn = 1
     while 1:
         try:
-            r = await asyncio.wait_for(p[turn].websocket.recv(), timeout=1)
-        except:
-            return turn^3
-        try:
+            r = await asyncio.wait_for(p[turn].websocket.recv(), timeout=TIMELIMIT_SHOOT)
             row, col = map(int, r.split())
         except:
             return turn^3
@@ -85,6 +83,9 @@ async def play_game(p):
             return turn
         else:
             raise Exception()
+        moves += 1
+        if(moves == MAX_NUM_OF_SHOTS):
+            return random.randint(1, 2)  # Slumpmässig vinnare
         await p[turn].trysend(s)
         await p[turn^3].trysend(s)
         turn = turn^3

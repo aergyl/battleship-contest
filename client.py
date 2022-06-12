@@ -1,7 +1,11 @@
 from random import random, randint
 
 
-def place_ships():
+NAME = f"Player_{randint(100, 999)}"
+
+def start_game(opponent, pnum):
+    print("Spelar mot", opponent)
+    print("Jag är spelare", pnum)
     return [
         (1, 1, 1, 2),
         (1, 4, 1, 6),
@@ -29,26 +33,25 @@ def game_over(r):
 
 
 #########################################################################
+import time
 import asyncio
 from websockets import connect
+import traceback
 
 async def main():
     async with connect("ws://localhost:1234") as websocket:  # byt ut mot serverns ip
-        await websocket.send(f"Player_{randint(100, 999)}")
+        await websocket.send(NAME)
         r = await websocket.recv()
         if r != "ok":
             print(r)
             return
         while True:
-            msg = await websocket.recv()
-            assert(msg[0:5] == "play ")
-            opponent = msg.split()[1]
-            print("Spelar mot", opponent)
+            msg = (await websocket.recv()).split()
+            assert(msg[0] == "play")
+            opponent = msg[1]
             pnum = int(await websocket.recv())
-            print("Jag är spelare", pnum)
-            ships = place_ships()
-            for ship in ships:
-                await websocket.send(" ".join(map(str, ship)))
+            ships = start_game(opponent, pnum)
+            await websocket.send(" ".join([" ".join(map(str, ship)) for ship in ships]))
             res = await websocket.recv()
             if res not in ["ok", "won", "lost"]:
                 print(res)
@@ -61,7 +64,7 @@ async def main():
                     r, c = shoot()
                     await websocket.send(f"{r} {c}")
                     res = await websocket.recv()
-                    if(res == "won"):
+                    if(res == "won" or res == "lost"):
                         break
                     result(res)
                 else:
@@ -74,4 +77,10 @@ async def main():
                 turn ^= 3
             game_over(res)
 
-asyncio.run(main())
+while 1:
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        traceback.print_exc()
+    print("\n\nConnection lost. Retrying 10s...")
+    time.sleep(10)
