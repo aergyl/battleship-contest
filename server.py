@@ -116,7 +116,7 @@ async def connect(websocket):
             await websocket.send("för långt namn")
             return
         for c in name:
-            if(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#%&/()=?^*@£${[]}\\±®œøæ|©µπåäöÅÄÖé,.-;:_<>"):
+            if(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+!\"#%&/()=?^*@£${[]}\\±®œøæ|©µπåäöÅÄÖé,.-;:_<>"):
                 await websocket.send("namnet innehåller otillåtna tecken")
                 return
         if(any([p.name==name for p in players])):

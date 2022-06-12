@@ -21,13 +21,24 @@ def shoot():
     return row, col
 
 def result(r):
-    print("Det blev en", r)
+    if r == "miss":
+        print("Jag missade.")
+    elif r == "hit":
+        print("Jag träffade!")
+    elif r == "sunk":  # bara om det är påslaget
+        print("Jag träffade och sänkte!")
+    else: assert 0
 
 def opp_shot(row, col):
     print(f"Motståndaren sköt på {row} {col}.")
 
 def game_over(r):
-    print(f"Spelet slut. Jag {r}.")
+    if r == "won":
+        print("Jag vann spelet!")
+    elif r == "lost":
+        print("Jag förlorade :(")
+    else:
+        assert 0
 
 
 
@@ -47,7 +58,7 @@ async def main():
             return
         while True:
             msg = (await websocket.recv()).split()
-            assert(msg[0] == "play")
+            assert msg[0] == "play"
             opponent = msg[1]
             pnum = int(await websocket.recv())
             ships = start_game(opponent, pnum)
@@ -56,20 +67,20 @@ async def main():
             if res not in ["ok", "won", "lost"]:
                 print(res)
                 return
-            if(res != "lost"):
+            if res != "lost":
                 print("Placering godkänd")
             turn = 1
             while res != "won" and res != "lost":
-                if(turn == pnum):
+                if turn == pnum:
                     r, c = shoot()
                     await websocket.send(f"{r} {c}")
                     res = await websocket.recv()
-                    if(res == "won" or res == "lost"):
+                    if res == "won" or res == "lost":
                         break
                     result(res)
                 else:
                     res = await websocket.recv()
-                    if(res == "won"):
+                    if res == "won":
                         break
                     r, c = map(int, res.split())
                     res = await websocket.recv()
