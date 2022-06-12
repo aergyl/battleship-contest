@@ -50,10 +50,11 @@ async def main():
             for ship in ships:
                 await websocket.send(" ".join(map(str, ship)))
             res = await websocket.recv()
-            if res != "ok" and res != "won":
+            if res not in ["ok", "won", "lost"]:
                 print(res)
                 return
-            print("Placering godkänd")
+            if(res != "lost"):
+                print("Placering godkänd")
             turn = 1
             while res != "won" and res != "lost":
                 if(turn == pnum):
