@@ -27,12 +27,17 @@ class Player:
             await self.websocket.send(str(pnum))
             fleet = Fleet()
             r = await asyncio.wait_for(self.websocket.recv(), timeout=TIMELIMIT_PLACE)
+            shipsizes = [2,3,3,4,5] # borde använda FLEET_DIM men jobbigt
             try:
-                r = list(map(int, r.split()))
-                for i in range(0, len(r), 4):
-                    row1, col1, row2, col2 = r[i : i+4]
-                    fleet.add_ship(col1, row1, col2, row2)  # assuming pos x = down
-                if(not fleet.validate() or len(r) != 4 * sum(FLEET_DIM.values())):
+                r = r.split()
+                for i in range(0, len(r), 3):
+                    row, col, dir = r[i : i+3]
+                    row, col = int(row), int(col)
+                    row2, col2 = row, col
+                    if dir == 'H': col2 += shipsizes[i//3]-1
+                    else: row2 += shipsizes[i//3]-1
+                    fleet.add_ship(col, row, col2, row2)  # assuming pos x = down
+                if(not fleet.validate() or len(r) != 3 * sum(FLEET_DIM.values())):
                     raise Exception()
             except:
                 await self.trysend("invalid fleet")
@@ -66,9 +71,9 @@ async def play_game(p):
         try:
             r = await asyncio.wait_for(p[turn].websocket.recv(), timeout=TIMELIMIT_SHOOT)
             row, col = map(int, r.split())
+            r = fleets[turn^3].get_hit_by(col, row)  # assuming pos x = down
         except:
             return turn^3
-        r = fleets[turn^3].get_hit_by(col, row)  # assuming pos x = down
         try:
             await p[turn^3].websocket.send(f"{row} {col}")
         except:
