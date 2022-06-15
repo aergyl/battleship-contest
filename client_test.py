@@ -2,7 +2,7 @@ from random import random, randint, shuffle, choice
 
 #This AI uses a heuristic score to rank empty squares + intelligent hunting when hitting.
 
-NAME = f"Player_{randint(100, 999)}"
+NAME = "Handviftaren"
 
 def start_game(opponent, pnum):
     print("Spelar mot", opponent)

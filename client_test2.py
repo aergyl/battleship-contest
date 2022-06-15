@@ -2,7 +2,7 @@ from random import random, randint, shuffle, choice
 
 #This AI searches with a randomized checkerboard pattern + intelligent hunting when hitting.
 
-NAME = f"Player_{randint(100, 999)}"
+NAME = "Schackbombaren"
 
 def start_game(opponent, pnum):
     print("Spelar mot", opponent)
