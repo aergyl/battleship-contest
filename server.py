@@ -6,7 +6,21 @@ from fleet import Fleet
 import pyglet as pg
 from itertools import product
 
+game_speed = 0.3
 window = pg.window.Window(255, 555, 'Battleships!')
+
+@window.event
+def on_key_press(key, mod):
+    global game_speed
+    if key == pg.window.key.SPACE:
+        game_speed = 0.03
+
+@window.event
+def on_key_release(key, mod):
+    global game_speed
+    if key == pg.window.key.SPACE:
+        game_speed = 0.3
+
 batch = pg.graphics.Batch()
 squares = {}
 colors = {
@@ -16,11 +30,18 @@ colors = {
     SIGNAL_LOST: (255, 255, 255)
 }
 for x, y, p in product(range(10), range(10), range(1, 3)):
-    squares[x, y, p] = pg.shapes.Rectangle(25 * x + 5, 25 * y + 300 * (p - 1) + 5, 20, 20, color=(55, 55, 255), batch=batch)
+    squares[x, y, p] = pg.shapes.Rectangle(25 * x + 5, 830 - 25 * y - 300 * p, 20, 20, color=(55, 55, 255), batch=batch)
+label1 = pg.text.Label('(Player 1)', x=5, y=260, anchor_x='left', batch=batch)
+label2 = pg.text.Label('(Player 2)', x=250, y=285, anchor_x='right', batch=batch)
 
 def reset_squares():
     for x, y, p in product(range(10), range(10), range(1, 3)):
         squares[x, y, p].color = (55, 55, 255)
+
+def reset_labels(p):
+    label1.text = p[1].name
+    label2.text = p[2].name
+
 
 async def window_loop():
     while not window.has_exit:
@@ -86,6 +107,7 @@ players = []
 
 async def play_game(p):
     reset_squares()
+    reset_labels(p)
     task1 = asyncio.create_task(p[1].new_game(p[2], 1))
     task2 = asyncio.create_task(p[2].new_game(p[1], 2))
     fleets = [None, await task1, await task2]  # 1-indexerad
@@ -97,7 +119,8 @@ async def play_game(p):
     turn = 1
     while 1:
         try:
-            await asyncio.sleep(0.2)
+            #Hold down space to speed up.
+            await asyncio.sleep(game_speed)
             r = await asyncio.wait_for(p[turn].websocket.recv(), timeout=TIMELIMIT_SHOOT)
             row, col = map(int, r.split())
             r = fleets[turn^3].get_hit_by(col, row)  # assuming pos x = down
