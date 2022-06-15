@@ -6,12 +6,17 @@ NAME = f"Player_{randint(100, 999)}"
 def start_game(opponent, pnum):
     print("Spelar mot", opponent)
     print("Jag är spelare", pnum)
+
+    # Lista med skepp i ordningen 2,3,3,4,5
+    # (rad, kolumn, riktning)
+    # Koordinater är för översta/vänstra hörnet
+    # 'H' = horisontell, 'V' = vertikal
     return [
-        (1, 1, 1, 2),
-        (1, 4, 1, 6),
-        (3, 1, 5, 1),
-        (3, 3, 3, 6),
-        (5, 3, 5, 7),
+        (1, 1, 'H'),  # 2
+        (1, 4, 'H'),  # 3
+        (3, 1, 'V'),  # 3
+        (3, 3, 'H'),  # 4
+        (5, 3, 'H'),  # 5
     ]
 
 def shoot():
@@ -62,7 +67,7 @@ async def main():
             opponent = msg[1]
             pnum = int(await websocket.recv())
             ships = start_game(opponent, pnum)
-            await websocket.send(" ".join([" ".join(map(str, ship)) for ship in ships]))
+            await websocket.send(" ".join([f"{r} {c} {d}" for r,c,d in ships]))
             res = await websocket.recv()
             if res not in ["ok", "won", "lost"]:
                 print(res)

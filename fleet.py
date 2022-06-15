@@ -44,6 +44,7 @@ class Fleet:
 	#Interacts with a shot targeting (x, y) and returns a signal indicating what happened.
 	def get_hit_by(self, x, y):
 		assert type(x) == type(y) == int
+		assert 0 <= x < BOARD_DIM[0] and 0 <= y < BOARD_DIM[1]
 		for ship in self.ships:
 			signal = ship.get_hit_by(x, y)
 			if signal != SIGNAL_MISS:
