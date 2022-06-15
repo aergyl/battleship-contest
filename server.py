@@ -97,6 +97,7 @@ async def play_game(p):
     turn = 1
     while 1:
         try:
+            await asyncio.sleep(0.2)
             r = await asyncio.wait_for(p[turn].websocket.recv(), timeout=TIMELIMIT_SHOOT)
             row, col = map(int, r.split())
             r = fleets[turn^3].get_hit_by(col, row)  # assuming pos x = down
@@ -126,7 +127,7 @@ async def play_game(p):
         turn = turn^3
 
 async def play_games():
-    while 1:
+    while not window.has_exit:
         await asyncio.sleep(5)
         if(len(players) < 2):
             print("Too few players")
