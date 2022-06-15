@@ -11,7 +11,7 @@ FLEET_DIM = {
 }
 
 # This is one way of ensuring that the game eventually ends.
-MAX_NUM_OF_SHOTS = 5*BOARD_DIM[0]*BOARD_DIM[1]
+MAX_NUM_OF_SHOTS = 10*BOARD_DIM[0]*BOARD_DIM[1]
 
 # If set to False, SIGNAL_SUNK will be replaced with SIGNAL_HIT.
 ANNOUNCE_WHEN_SUNK = False

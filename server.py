@@ -9,6 +9,12 @@ from itertools import product
 window = pg.window.Window(255, 555, 'Battleships!')
 batch = pg.graphics.Batch()
 squares = {}
+colors = {
+    SIGNAL_MISS: (50, 50, 50),
+    SIGNAL_HIT: (150, 150, 50),
+    SIGNAL_SUNK: (250, 150, 150),
+    SIGNAL_LOST: (255, 255, 255)
+}
 for x, y, p in product(range(10), range(10), range(1, 3)):
     squares[x, y, p] = pg.shapes.Rectangle(25 * x + 5, 25 * y + 300 * (p - 1) + 5, 20, 20, color=(55, 55, 255), batch=batch)
 
@@ -16,8 +22,8 @@ def reset_squares():
     for x, y, p in product(range(10), range(10), range(1, 3)):
         squares[x, y, p].color = (55, 55, 255)
 
-async def update_window():
-    while True:
+async def window_loop():
+    while not window.has_exit:
         await asyncio.sleep(0.05)
         window.dispatch_events()
         window.clear()
@@ -97,7 +103,7 @@ async def play_game(p):
         except:
             return turn^3
         r = fleets[turn^3].get_hit_by(col, row)  # assuming pos x = down
-        squares[col, row, turn].color = (80 * (r + 1), 80 * (r + 1), 80 * (r + 1))
+        squares[col, row, turn].color = colors[r]
         try:
             await p[turn^3].websocket.send(f"{row} {col}")
         except:
@@ -164,8 +170,7 @@ async def connect(websocket):
 
 async def main():
     asyncio.create_task(play_games())
-    asyncio.create_task(update_window())
     async with serve(connect, "0.0.0.0", 1234, ping_interval=None):
-        await asyncio.Future()
+        await window_loop()
 
 asyncio.run(main())
