@@ -3,6 +3,26 @@ from websockets import serve, exceptions
 import random
 from constants import *
 from fleet import Fleet
+import pyglet as pg
+from itertools import product
+
+window = pg.window.Window(255, 555, 'Battleships!')
+batch = pg.graphics.Batch()
+squares = {}
+for x, y, p in product(range(10), range(10), range(1, 3)):
+    squares[x, y, p] = pg.shapes.Rectangle(25 * x + 5, 25 * y + 300 * (p - 1) + 5, 20, 20, color=(55, 55, 255), batch=batch)
+
+def reset_squares():
+    for x, y, p in product(range(10), range(10), range(1, 3)):
+        squares[x, y, p].color = (55, 55, 255)
+
+async def update_window():
+    while True:
+        await asyncio.sleep(0.05)
+        window.dispatch_events()
+        window.clear()
+        batch.draw()
+        window.flip()
 
 class Player:
     def __init__(self, name, websocket):
@@ -53,6 +73,7 @@ class Player:
 players = []
 
 async def play_game(p):
+    reset_squares()
     task1 = asyncio.create_task(p[1].new_game(p[2], 1))
     task2 = asyncio.create_task(p[2].new_game(p[1], 2))
     fleets = [None, await task1, await task2]  # 1-indexerad
@@ -69,6 +90,7 @@ async def play_game(p):
         except:
             return turn^3
         r = fleets[turn^3].get_hit_by(col, row)  # assuming pos x = down
+        squares[col, row, turn].color = (80 * (r + 1), 80 * (r + 1), 80 * (r + 1))
         try:
             await p[turn^3].websocket.send(f"{row} {col}")
         except:
@@ -135,6 +157,7 @@ async def connect(websocket):
 
 async def main():
     asyncio.create_task(play_games())
+    asyncio.create_task(update_window())
     async with serve(connect, "0.0.0.0", 1234, ping_interval=None):
         await asyncio.Future()
 

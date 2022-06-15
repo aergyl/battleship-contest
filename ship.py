@@ -19,19 +19,13 @@ class Ship:
 	def validate_position(self):
 		validation_x = 0 <= self.rect_x[0] and self.rect_x[1] < BOARD_DIM[0]
 		validation_y = 0 <= self.rect_y[0] and self.rect_y[1] < BOARD_DIM[1]
-		if validation_x and validation_y:
-			return True
-		else:
-			return False
+		return validation_x and validation_y
 
 	#Checks if the ship is adjacent to another ship (horizontally, vertically or diagonally).
 	def validate_adjacent(self, other_ship):
 		validation_x = self.rect_x[0] > other_ship.rect_x[1] + 1 or other_ship.rect_x[0] > self.rect_x[1] + 1
 		validation_y = self.rect_y[0] > other_ship.rect_y[1] + 1 or other_ship.rect_y[0] > self.rect_y[1] + 1
-		if validation_x or validation_y:
-			return True
-		else:
-			return False
+		return validation_x or validation_y
 
 	#This should be called before starting the game, but only after a successful validation.
 	def setup(self):

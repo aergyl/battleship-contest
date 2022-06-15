@@ -28,19 +28,13 @@ class Fleet:
 
 	#Checks if the ships in the fleet are of the correct dimensions.
 	def validate_dim(self):
-		count_dim = {}
+		dim_count = {}
 		for ship in self.ships:
-			if ship.dim in FLEET_DIM:
-				if ship.dim in count_dim:
-					count_dim[ship.dim] += 1
-				else:
-					count_dim[ship.dim] = 1
+			if ship.dim in dim_count:
+				dim_count[ship.dim] += 1
 			else:
-				return False
-		if count_dim == FLEET_DIM:
-			return True
-		else:
-			return False
+				dim_count[ship.dim] = 1
+		return dim_count == FLEET_DIM
 
 	#This should be called before starting the game, but only after a successful validation.
 	def setup(self):
@@ -61,7 +55,4 @@ class Fleet:
 
 	#Checks if there are any ships alive in the fleet.
 	def is_alive(self):
-		for ship in self.ships:
-			if ship.is_alive():
-				return True
-		return False
+		return any(ship.is_alive() for ship in self.ships)
