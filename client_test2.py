@@ -1,6 +1,6 @@
 from random import random, randint, shuffle, choice
 
-#This AI uses a heuristic score to rank empty squares + intelligent hunting when hitting.
+#This AI searches with a randomized checkerboard pattern + intelligent hunting when hitting.
 
 NAME = f"Player_{randint(100, 999)}"
 
@@ -8,7 +8,7 @@ def start_game(opponent, pnum):
     print("Spelar mot", opponent)
     print("Jag är spelare", pnum)
 
-    global shots, shipsizes
+    global shots, shipsizes, checkerboard
     shots = []
     shots.append([False] * 12)
     for i in range(10):
@@ -16,6 +16,11 @@ def start_game(opponent, pnum):
     shots.append([False] * 12)
 
     shipsizes = [2, 3, 3, 4, 5]
+    checkerboard = []
+    for i in range(1, 11):
+        for j in range(1, 11, 2):
+            checkerboard.append((i, j + i % 2))
+    shuffle(checkerboard)
 
     hv = ['H', 'V']
     occupied = []
@@ -164,17 +169,10 @@ def get_shot():
                 hunt = hunt_ship(x, y)
                 if hunt:
                     return hunt
-
-    best = [0, []]
-    for x in range(1, 11):
-        for y in range(1, 11):
-            s = score(x, y)
-            if s > best[0]:
-                best[0] = s
-                best[1] = [(x, y)]
-            elif s == best[0]:
-                best[1].append((x, y))
-    return choice(best[1])
+    while True:
+        x, y = checkerboard.pop()
+        if shots[x][y] == None:
+            return (x, y)
 
 def shoot():
     global last_shot
