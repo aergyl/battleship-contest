@@ -47,15 +47,16 @@ class Player:
             await self.websocket.send(str(pnum))
             fleet = Fleet()
             r = await asyncio.wait_for(self.websocket.recv(), timeout=TIMELIMIT_PLACE)
-            shipsizes = [2,3,3,4,5] # borde använda FLEET_DIM men jobbigt
+            shipsizes = []
+            for size in FLEET_DIM:
+                shipsizes += [size] * FLEET_DIM[size]
             try:
                 r = r.split()
                 for i in range(0, len(r), 3):
                     row, col, dir = r[i : i+3]
-                    row, col = int(row), int(col)
-                    row2, col2 = row, col
-                    if dir == 'H': col2 += shipsizes[i//3]-1
-                    else: row2 += shipsizes[i//3]-1
+                    row, col, idx = int(row), int(col), int(dir == 'H')
+                    row2 = row + shipsizes[i//3][idx]-1
+                    col2 = col + shipsizes[i//3][1 - idx]-1
                     fleet.add_ship(col, row, col2, row2)  # assuming pos x = down
                 if(not fleet.validate() or len(r) != 3 * sum(FLEET_DIM.values())):
                     raise Exception()
