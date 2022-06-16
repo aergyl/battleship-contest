@@ -1,57 +1,9 @@
 import asyncio
 from websockets import serve, exceptions
 import random
+import time
 from constants import *
 from fleet import Fleet
-import pyglet as pg
-from itertools import product
-
-game_speed = 0.3
-window = pg.window.Window(255, 605, 'Battleships!')
-
-@window.event
-def on_key_press(key, mod):
-    global game_speed
-    if key == pg.window.key.SPACE:
-        game_speed = 0.03
-
-@window.event
-def on_key_release(key, mod):
-    global game_speed
-    if key == pg.window.key.SPACE:
-        game_speed = 0.3
-
-batch = pg.graphics.Batch()
-squares = {}
-colors = {
-    SIGNAL_MISS: (50, 50, 50),
-    SIGNAL_HIT: (150, 150, 50),
-    SIGNAL_SUNK: (250, 150, 150),
-    SIGNAL_LOST: (255, 255, 255)
-}
-for x, y, p in product(range(10), range(10), range(1, 3)):
-    squares[x, y, p] = pg.shapes.Rectangle(25 * x + 5, 930 - 25 * y - 350 * p, 20, 20, color=(55, 55, 255), batch=batch)
-label1 = pg.text.Label('(Player 1)', x=5, y=260, anchor_x='left', batch=batch)
-label2 = pg.text.Label('(Player 2)', x=250, y=335, anchor_x='right', batch=batch)
-label3 = pg.text.Label('---', x=127, y=290, anchor_x='center', font_size=24, batch=batch)
-
-def reset_squares():
-    for x, y, p in product(range(10), range(10), range(1, 3)):
-        squares[x, y, p].color = (55, 55, 255)
-
-def reset_labels(p):
-    label1.text = p[1].name
-    label2.text = p[2].name
-    label3.text = '---'
-
-
-async def window_loop():
-    while not window.has_exit:
-        await asyncio.sleep(0.05)
-        window.dispatch_events()
-        window.clear()
-        batch.draw()
-        window.flip()
 
 class Player:
     def __init__(self, name, websocket):
@@ -79,6 +31,7 @@ class Player:
             shipsizes = []
             for size in FLEET_DIM:
                 shipsizes += [size] * FLEET_DIM[size]
+            shipsizes.sort()
             try:
                 r = r.split()
                 for i in range(0, len(r), 3):
@@ -106,31 +59,48 @@ class Player:
             await self.trysend("lost")
 
 players = []
+spectators = []
+spectator_msgs = []  # for new spectators to catch up with this game
+
+async def send_to_spectators(msg):
+    spectator_msgs.append(msg)
+    i = 0
+    # saving len in case someone connects while in the loop
+    len_spec = len(spectators)
+    while i < len_spec:
+        try:
+            await spectators[i].send(msg)
+        except:
+            spectators.pop(i)
+            len_spec -= 1
+        else:
+            i += 1
 
 async def play_game(p):
-    reset_squares()
-    reset_labels(p)
+    spectator_msgs.clear()
+    await send_to_spectators(f"new_game {p[1].name} {p[2].name}")
     task1 = asyncio.create_task(p[1].new_game(p[2], 1))
     task2 = asyncio.create_task(p[2].new_game(p[1], 2))
-    fleets = [None, await task1, await task2]  # 1-indexerad
+    fleets = [None, await task1, await task2]  # 1-indexed
     if(fleets[1] is None): return 2
     if(fleets[2] is None): return 1
     await p[1].trysend("ok")
     await p[2].trysend("ok")
     moves = 0
     turn = 1
+    prevmove_time = time.time()
     while 1:
+        await asyncio.sleep(SHOOT_MINTIME - (time.time()-prevmove_time))
+        prevmove_time = time.time()
+        await send_to_spectators(f"moves {moves}")
         try:
-            #Hold down space to speed up.
-            await asyncio.sleep(game_speed)
-            label3.text = str(moves // 2 + 1)
             r = await asyncio.wait_for(p[turn].websocket.recv(), timeout=TIMELIMIT_SHOOT)
             row, col = map(int, r.split())
             r = fleets[turn^3].get_hit_by(col, row)  # assuming pos x = down
         except:
             return turn^3
         r = fleets[turn^3].get_hit_by(col, row)  # assuming pos x = down
-        squares[col, row, turn].color = colors[r]
+        
         try:
             await p[turn^3].websocket.send(f"{row} {col}")
         except:
@@ -147,23 +117,25 @@ async def play_game(p):
             raise Exception()
         moves += 1
         if(moves == MAX_NUM_OF_SHOTS):
-            return random.randint(1, 2)  # Slumpmässig vinnare
+            return random.randint(1, 2)  # Random winner
         await p[turn].trysend(s)
         await p[turn^3].trysend(s)
+        await send_to_spectators(f"color {col} {row} {turn} {s}")
         turn = turn^3
 
 async def play_games():
-    while not window.has_exit:
-        await asyncio.sleep(5)
+    while 1:
+        await asyncio.sleep(REST_TIME)
         if(len(players) < 2):
             print("Too few players")
             continue
-        p = [None] + random.sample(players, 2)  # 1-indexerad
+        p = [None] + random.sample(players, 2)  # 1-indexed
         print(f"{p[1].name} vs {p[2].name}")
         winner = await play_game(p)
         assert winner in [1,2]
         await p[1].game_over(winner)
         await p[2].game_over(winner)
+        await send_to_spectators(f"winner {winner}")
         print(p[winner].name, "won!")
 
 async def connect(websocket):
@@ -171,6 +143,15 @@ async def connect(websocket):
     name = None
     try:
         name = await websocket.recv()
+        if(name == "*** SPECTATOR ***"):
+            i = 0
+            while i < len(spectator_msgs):
+                try: await websocket.send(spectator_msgs[i])
+                except: return
+                i+=1
+            spectators.append(websocket)
+            await websocket.wait_closed()
+            return
         if(len(name) < 1):
             await websocket.send("för kort namn")
             return
@@ -198,6 +179,6 @@ async def connect(websocket):
 async def main():
     asyncio.create_task(play_games())
     async with serve(connect, "0.0.0.0", 1234, ping_interval=None):
-        await window_loop()
+        await asyncio.Future()
 
 asyncio.run(main())

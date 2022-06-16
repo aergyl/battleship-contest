@@ -22,7 +22,17 @@ SIGNAL_HIT = 1
 SIGNAL_SUNK = 2
 SIGNAL_LOST = 3
 
-# Time limit to place all ships (seconds)
+
+## Times in seconds
+
+# Time between games
+REST_TIME = 5
+
+# Time limit to place all ships
 TIMELIMIT_PLACE = 2
-# Time limit for shooting (seconds)
+
+# Time limit for shooting
 TIMELIMIT_SHOOT = 0.5
+
+# Minimum time per move (server will wait if players are faster)
+SHOOT_MINTIME = 0.4
