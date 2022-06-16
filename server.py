@@ -112,15 +112,17 @@ async def play_game(p):
         elif(r == SIGNAL_SUNK):
             s = "sunk"
         elif(r == SIGNAL_LOST):
-            return turn
+            s = "lost"
         else:
             raise Exception()
         moves += 1
-        if(moves == MAX_NUM_OF_SHOTS):
+        if(moves > MAX_NUM_OF_SHOTS):
             return random.randint(1, 2)  # Random winner
+        await send_to_spectators(f"color {col} {row} {turn} {s}")
+        if s == "lost":
+            return turn
         await p[turn].trysend(s)
         await p[turn^3].trysend(s)
-        await send_to_spectators(f"color {col} {row} {turn} {s}")
         turn = turn^3
 
 async def play_games():

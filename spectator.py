@@ -12,7 +12,7 @@ colors = {
     "miss": (50, 50, 50),
     "hit": (150, 150, 50),
     "sunk": (250, 150, 150),
-    "lost": (255, 255, 255)
+    "lost": (200, 0, 0)
 }
 for x, y, p in product(range(10), range(10), range(1, 3)):
     squares[x, y, p] = pg.shapes.Rectangle(25 * x + 5, 930 - 25 * y - 350 * p, 20, 20, color=(55, 55, 255), batch=batch)
