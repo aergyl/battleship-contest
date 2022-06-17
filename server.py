@@ -118,12 +118,12 @@ async def play_game(p):
         await send_to_spectators(f"color {col} {row} {turn} {s}")
         if s == "lost":
             return turn
-        await p[turn].trysend(s)
-        await p[turn^3].trysend(s)
-        turn = turn^3
         moves += 1
         if(moves == MAX_NUM_OF_SHOTS):
             return random.randint(1, 2)  # Random winner
+        await p[turn].trysend(s)
+        await p[turn^3].trysend(s)
+        turn = turn^3
 
 async def play_games():
     while 1:
