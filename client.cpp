@@ -179,7 +179,7 @@ int main(){
         catch(const exception& e){
             cout << e.what() << endl;
         }
-        cout << "\n\nConnection lost. Retrying in 10..." << endl;
+        cout << "\n\nConnection lost. Retrying in 10s..." << endl;
         sleep(10);
     }
 }
