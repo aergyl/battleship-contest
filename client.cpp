@@ -1,6 +1,7 @@
 #include <cassert>
 #include <iostream>
 #include <string>
+#include <tuple>
 #include <vector>
 #include <memory>
 using namespace std;
@@ -180,6 +181,10 @@ int main(){
             cout << e.what() << endl;
         }
         cout << "\n\nConnection lost. Retrying in 10s..." << endl;
+#ifdef _WIN32
+        Sleep(10000);
+#else
         sleep(10);
+#endif
     }
 }
