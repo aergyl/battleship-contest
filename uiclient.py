@@ -33,7 +33,8 @@ class UIClient:
 			pass
 
 	async def command(self, cmd):
-		pass
+		if cmd == 'search':
+			await self.ws.send('search')
 
 	async def ainput(self):
 		loop = aio.get_running_loop()

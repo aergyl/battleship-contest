@@ -76,6 +76,9 @@ class UIServer():
 		self.frozen = False
 		self.pairing = False
 		self.pairing_interval = 10
+		self.score_weight = 0.1
+		self.rank_scale = 7000
+		self.rank_offset = 3000
 
 	def load_data(self):
 		self.users = {}
@@ -93,6 +96,26 @@ class UIServer():
 			data[user.username] = user.save_to_dict()
 		with open('userdata.json', 'w') as f:
 			json.dump(data, f)
+			
+	def player_ranking(self, player):
+		return round(self.rank_offset + player.get_total_score() / len(self.users)*self.rank_scale)
+	
+	def ranking_string(self, n):
+		s = "["
+		s += Back.BLUE
+		for k in range(100):
+			if n > (k*(self.rank_scale+self.rank_offset)/100):
+				s += " "
+			else:
+				s +=Back.RESET
+				s += " "
+		s += Back.RESET
+		s += "] "
+		s += str(n)
+		s += "/"
+		s += str(self.rank_scale+self.rank_offset)
+		s += '\n'
+		return s
 
 	def print(self):
 		terminal_size = os.get_terminal_size()
@@ -106,7 +129,9 @@ class UIServer():
 				s += Fore.GREEN
 			else:
 				s += Fore.RED
-			s += f" {user.username} {user.get_total_score():.1f}\n"
+			s += f" {user.username} {user.get_total_score():.1f}"
+			s += (20-len(user.username)) * " "
+			s += self.ranking_string(self.player_ranking(user))
 			s += Fore.RESET
 		s += '\n' * (sy - 6 - len(self.users))
 		s += 'pairing: '
@@ -165,13 +190,13 @@ class UIServer():
 		old_score1 = player1.score[player2.username]
 		old_score2 = player2.score[player1.username]
 		if game.result == 0:
-			score1, score2 = 0.5, 0.5
+			score1 = score2 = 0.5
 		elif game.result == 1:
 			score1, score2 = 1, 0
 		elif game.result == 2:
 			score1, score2 = 0, 1
-		player1.score[player2.username] = (old_score1 + score1) / 2
-		player2.score[player1.username] = (old_score2 + score2) / 2
+		player1.score[player2.username] = (1-self.score_weight)*old_score1 + self.score_weight*score1
+		player2.score[player1.username] = (1-self.score_weight)*old_score2 + self.score_weight*score2
 		self.games.remove(game)
 
 	async def pair_players(self):
@@ -179,7 +204,7 @@ class UIServer():
 			if self.pairing:
 				players = list(filter(lambda user: user.searching, self.users.values()))
 				if len(players) > 1:
-					aio.create_task(self.pair(random.sample(players, 2)))
+					aio.create_task(self.pair(*random.sample(players, 2)))
 			await aio.sleep(self.pairing_interval)
 
 	async def command(self, cmd):

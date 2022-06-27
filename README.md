@@ -6,8 +6,16 @@
 
 \>\>\> a = automatically update view.
 
-\>\>\> q = shuts down server (ctrl+c also works).
+\>\>\> q = shut down server (ctrl+c also works).
 
-\>\>\> register {USERNAME} = registers user.
+\>\>\> register {USERNAME} = register user.
 
-\>\>\> unregister {USERNAME} = unregisters user.
+\>\>\> unregister {USERNAME} = unregister user.
+
+\>\>\> resetpassword {USERNAME} = reset user's password.
+
+\>\>\> kick {USERNAME} = kick user.
+
+\>\>\> pairing on = turn automatic pairing on.
+
+\>\>\> pairing off = turn automatic pairing off.
