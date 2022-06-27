@@ -1,10 +1,13 @@
-from random import randint
+############################################################
+
+HOST = 'localhost'
+PORT = 1234
 
 USERNAME = 'Test'
-PASSWORD = '' #Keep empty for prompt.
+PASSWORD = ''
 
 ############################################################
-from colorama import init, Fore, Back, Style
+from colorama import *
 from websockets import connect, exceptions
 from threading import Thread
 from getpass import getpass
@@ -15,11 +18,9 @@ import re
 class UIClient:
 
 	def __init__(self):
-		self.msg = '---'
 		init()
 
 	def print(self):
-		os.system('clear||cls')
 		terminal_size = os.get_terminal_size()
 		sx, sy = terminal_size.columns, terminal_size.lines
 		s = ''
@@ -41,8 +42,8 @@ class UIClient:
 		Thread(target=function, daemon=True).start()
 		return await future
 
-	async def main(self, port):
-		async with connect(f"ws://{USERNAME}:{PASSWORD}@localhost:{port}") as ws:
+	async def main(self):
+		async with connect(f"ws://{USERNAME}:{PASSWORD}@{HOST}:{PORT}") as ws:
 			self.ws = ws
 			aio.create_task(self.listen())
 			while True:
@@ -53,7 +54,7 @@ if __name__ == '__main__':
 	try:
 		if not PASSWORD:
 			PASSWORD = getpass()
-		aio.run(UIClient().main(1234))
+		aio.run(UIClient().main())
 	except KeyboardInterrupt:
 		print()
 	except (OSError, exceptions.WebSocketException):

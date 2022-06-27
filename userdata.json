@@ -1,7 +1,1 @@
-{
-    "Test": {
-        "id": 1,
-        "score": 0,
-        "password": "test"
-    }
-}
+{"Test": {"username": "Test", "password": "74657374", "score": {"Test": 0.5, "Test2": 0.5, "Test3": 0.5}}, "Test2": {"username": "Test2", "password": null, "score": {"Test": 0.5, "Test2": 0.5, "Test3": 0.5}}, "Test3": {"username": "Test3", "password": null, "score": {"Test": 0.5, "Test2": 0.5, "Test3": 0.5}}}
