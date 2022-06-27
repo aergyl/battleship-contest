@@ -3,6 +3,7 @@ from websockets import serve, exceptions, basic_auth_protocol_factory
 from threading import Thread
 from random import randrange
 import asyncio as aio
+import random
 import json
 import os
 import re
@@ -17,7 +18,7 @@ class Game:
 		self.next_move = [None, None]
 
 	async def run(self):
-		pass
+		self.result = random.randint(0, 2)
 
 	async def tryplace(self, player, fleet):
 		pass
@@ -28,7 +29,7 @@ class Game:
 	def forfeit(self, player):
 		pass
 
-class User(dict):
+class User:
 
 	def __init__(self, username, password, score):
 		self.username = username
@@ -107,7 +108,10 @@ class UIServer():
 				s += Fore.RED
 			s += f" {user.username} {user.get_total_score():.1f}\n"
 			s += Fore.RESET
-		s += '\n' * (sy - 5 - len(self.users))
+		s += '\n' * (sy - 6 - len(self.users))
+		s += 'pairing: '
+		s += 'on' if self.pairing else 'off'
+		s += '\n'
 		if self.frozen and self.running:
 			s += '>>> '
 		print(s, end='')
@@ -140,7 +144,7 @@ class UIServer():
 						await ws.send('no')
 				elif m := re.fullmatch(r'shoot (\d+),(\d+)', msg):
 					if user.game:
-						await game.tryshoot(client, int(m.group(1)), int(m.group(2)))
+						await game.tryshoot(user, int(m.group(1)), int(m.group(2)))
 					else:
 						await ws.send('no')
 				else:
@@ -153,17 +157,30 @@ class UIServer():
 			user.ws = None
 
 	async def pair(self, player1, player2):
+		player1.searching = False
+		player2.searching = False
 		game = Game(player1, player2)
+		self.games.append(game)
 		await game.run()
-		old_score = player1.score[player2.username]
+		old_score1 = player1.score[player2.username]
+		old_score2 = player2.score[player1.username]
 		if game.result == 0:
-			score
+			score1, score2 = 0.5, 0.5
 		elif game.result == 1:
 			score1, score2 = 1, 0
 		elif game.result == 2:
 			score1, score2 = 0, 1
 		player1.score[player2.username] = (old_score1 + score1) / 2
 		player2.score[player1.username] = (old_score2 + score2) / 2
+		self.games.remove(game)
+
+	async def pair_players(self):
+		while True:
+			if self.pairing:
+				players = list(filter(lambda user: user.searching, self.users.values()))
+				if len(players) > 1:
+					aio.create_task(self.pair(random.sample(players, 2)))
+			await aio.sleep(self.pairing_interval)
 
 	async def command(self, cmd):
 		if cmd == '' or not self.frozen:
@@ -194,22 +211,10 @@ class UIServer():
 			username = m.group(1)
 			if username in self.users:
 				self.users[username].kick()
-		elif m == 'pairing on':
+		elif cmd == 'pairing on':
 			self.pairing = True
-		elif m == 'pairing off':
+		elif cmd == 'pairing off':
 			self.pairing = False
-					
-	async def pair_players(self):
-		while True:
-			aio.sleep(pairing_interval)
-			if pairing:
-				available_players = list(filter(lambda client: client.playing, self.clients))
-				if len(available_players) > 1:
-					player_1 = available_players.pop(randrange(len(available_players)))
-					player_2 = available_players.pop(randrange(len(available_players)))
-					new_game = Game(player_1, player_2)
-					self.games.append(new_game)
-					aio.create_task(new_game.run())
 
 	async def ainput(self):
 		loop = aio.get_running_loop()
@@ -227,6 +232,7 @@ class UIServer():
 	async def main(self, host, port, fps):
 		try:
 			aio.create_task(self.draw(1 / fps))
+			aio.create_task(self.pair_players())
 			protocol = basic_auth_protocol_factory(check_credentials=self.authenticate)
 			async with serve(self.connect, host, port, create_protocol=protocol):
 				while self.running:
