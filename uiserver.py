@@ -93,6 +93,9 @@ class UIServer():
 			data[user.username] = user.save_to_dict()
 		with open('userdata.json', 'w') as f:
 			json.dump(data, f)
+			
+	def player_ranking(player):
+		return(3000 + player.get_total_score()*7000)
 
 	def print(self):
 		terminal_size = os.get_terminal_size()
