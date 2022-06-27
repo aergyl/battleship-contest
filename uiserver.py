@@ -1,6 +1,7 @@
 from graphics import fg, bg, fbs
 from websockets import serve, exceptions, basic_auth_protocol_factory
 from threading import Thread
+from random import randrange
 import asyncio as aio
 import json
 import os
@@ -155,7 +156,16 @@ class UIServer():
 			for client in self.clients:
 				if client.name == username:
 					client.close()
-
+					
+	async def pair_players(self):
+		available_players = list(filter(lambda client: client.playing, self.clients))
+		if len(available_players) > 1:
+			player_1 = available_players.pop(randrange(len(available_players)))
+			player_2 = available_players.pop(randrange(len(available_players)))
+			new_game = Game(player_1, player_2)
+			self.games.append(new_game)
+			aio.create_task(new_game.run())
+			
 	async def ainput(self):
 		loop = aio.get_running_loop()
 		future = loop.create_future()
