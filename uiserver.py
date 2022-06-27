@@ -76,6 +76,8 @@ class UIServer():
 		self.pairing = False
 		self.pairing_interval = 10
 		self.score_weight = 0.1
+		self.rank_scale = 7000
+		self.rank_offset = 3000
 
 	def load_data(self):
 		self.users = {}
@@ -95,7 +97,22 @@ class UIServer():
 			json.dump(data, f)
 			
 	def player_ranking(player):
-		return(3000 + player.get_total_score()*7000)
+		return(round(rank_offset + player.get_total_score()*rank_scale))
+	
+	def ranking_string(n):
+		s = "["
+		s += Back.BLUE
+		for k in range(100):
+			if n > (k*(rank_scale+rank_offset)/100):
+				s += " "
+			else:
+				s +=Back.RESET
+				s += " "
+		s += Back.RESET
+		s += "] "
+		s += str(n)
+		s += "/"
+		s += str(rank_scale+rank_offset)
 
 	def print(self):
 		terminal_size = os.get_terminal_size()
@@ -110,6 +127,8 @@ class UIServer():
 			else:
 				s += Fore.RED
 			s += f" {user.username} {user.get_total_score():.1f}\n"
+			s += (20-len(user.username)) * " "
+			s += ranking_string(player_ranking(user))
 			s += Fore.RESET
 		s += '\n' * (sy - 5 - len(self.users))
 		if self.frozen and self.running:
