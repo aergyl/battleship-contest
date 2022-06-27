@@ -75,6 +75,7 @@ class UIServer():
 		self.frozen = False
 		self.pairing = False
 		self.pairing_interval = 10
+		self.score_weight = 0.1
 
 	def load_data(self):
 		self.users = {}
@@ -155,15 +156,16 @@ class UIServer():
 	async def pair(self, player1, player2):
 		game = Game(player1, player2)
 		await game.run()
-		old_score = player1.score[player2.username]
+		old_score1 = player1.score[player2.username]
+		old_score2 = player2.score[player1.username]
 		if game.result == 0:
-			score
+			score1 = score2 = 0.5
 		elif game.result == 1:
 			score1, score2 = 1, 0
 		elif game.result == 2:
 			score1, score2 = 0, 1
-		player1.score[player2.username] = (old_score1 + score1) / 2
-		player2.score[player1.username] = (old_score2 + score2) / 2
+		player1.score[player2.username] = (1-score_weight)*old_score1 + score_weight*score1
+		player2.score[player1.username] = (1-score_weight)*old_score2 + score_weight*score2
 
 	async def command(self, cmd):
 		if cmd == '' or not self.frozen:
