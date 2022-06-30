@@ -1,1 +1,29 @@
-{"Test": {"username": "Test", "password": "74657374", "score": {"Test": 0.5, "Test3": 0.55}}, "Test3": {"username": "Test3", "password": "7465737433", "score": {"Test": 0.45, "Test3": 0.5}}}
+{
+    "Test": {
+        "username": "Test",
+        "password": "74657374",
+        "score": {
+            "Test": 0.5,
+            "Test3": 0.5806344120926705,
+            "Test2": 0.40691785502110484
+        }
+    },
+    "Test3": {
+        "username": "Test3",
+        "password": "7465737433",
+        "score": {
+            "Test": 0.4193655879073297,
+            "Test3": 0.5,
+            "Test2": 0.6460447560712929
+        }
+    },
+    "Test2": {
+        "username": "Test2",
+        "password": "7465737432",
+        "score": {
+            "Test": 0.5930821449788954,
+            "Test3": 0.3539552439287074,
+            "Test2": 0.5
+        }
+    }
+}

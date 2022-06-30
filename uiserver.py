@@ -1,7 +1,6 @@
 from colorama import *
 from websockets import serve, exceptions, basic_auth_protocol_factory
 from threading import Thread
-from random import randrange
 import asyncio as aio
 import random
 import json
@@ -35,7 +34,7 @@ class User:
 		self.username = username
 		self.password = password
 		self.score = score
-		self.ws = None
+		self.websocket = None
 		self.searching = False
 		self.game = None
 
@@ -57,12 +56,12 @@ class User:
 
 	def kick(self):
 		self.switch(False, None)
-		if self.ws:
-			self.ws.close()
+		if self.websocket:
+			self.websocket.close()
 
 	async def trysend(self, message):
 		try:
-			await self.ws.send(message)
+			await self.websocket.send(message)
 		except exceptions.WebSocketException:
 			self.kick()
 
@@ -95,21 +94,18 @@ class UIServer():
 		for user in self.users.values():
 			data[user.username] = user.save_to_dict()
 		with open('userdata.json', 'w') as f:
-			json.dump(data, f)
+			json.dump(data, f, indent=4)
 			
 	def player_ranking(self, player):
-		return round(self.rank_offset + player.get_total_score() / len(self.users)*self.rank_scale)
+		return round(self.rank_offset + player.get_total_score() / len(self.users) * self.rank_scale)
 	
-	def ranking_string(self, n):
+	def ranking_string(self, n, width):
 		s = "["
-		s += Back.BLUE
-		for k in range(100):
-			if n > (k*(self.rank_scale+self.rank_offset)/100):
-				s += " "
+		for k in range(width):
+			if n > (k*(self.rank_scale+self.rank_offset)/width):
+				s += "#"
 			else:
-				s +=Back.RESET
 				s += " "
-		s += Back.RESET
 		s += "] "
 		s += str(n)
 		s += "/"
@@ -123,16 +119,17 @@ class UIServer():
 		title = 'Battleship Server'
 		s = ''
 		s += f"\n{' ' * ((sx - len(title)) // 2)}{title}\n\n"
-		s += 'Active Users\n'
+		s += 'Users\n'
 		for user in self.users.values():
-			if user.ws:
-				s += Fore.GREEN
+			s += Fore.GREEN
+			if user.websocket:
+				s += Style.DIM
 			else:
-				s += Fore.RED
-			s += f" {user.username} {user.get_total_score():.1f}"
-			s += (20-len(user.username)) * " "
-			s += self.ranking_string(self.player_ranking(user))
-			s += Fore.RESET
+				s += Style.NORMAL
+			s += " " + user.username
+			s += (14 - len(user.username)) * " "
+			s += self.ranking_string(self.player_ranking(user), sx - 28)
+			s += Style.RESET_ALL
 		s += '\n' * (sy - 6 - len(self.users))
 		s += 'pairing: '
 		s += 'on' if self.pairing else 'off'
@@ -144,7 +141,7 @@ class UIServer():
 	async def authenticate(self, username, password):
 		hex_password = password.encode().hex()
 		if username in self.users:
-			if not self.users[username].ws:
+			if not self.users[username].websocket:
 				if self.users[username].password is None:
 					if re.fullmatch(r'\w{3,13}', password):
 						self.users[username].password = hex_password
@@ -153,11 +150,11 @@ class UIServer():
 					return True
 		return False
 
-	async def connect(self, ws):
-		user = self.users[ws.username]
-		user.ws = ws
+	async def connect(self, websocket):
+		user = self.users[websocket.username]
+		user.websocket = websocket
 		try:
-			async for msg in ws:
+			async for msg in websocket:
 				if msg == 'idle':
 					user.switch(False, None)
 				elif msg == 'search':
@@ -166,37 +163,30 @@ class UIServer():
 					if user.game:
 						await user.game.tryplace(user, m.group(1))
 					else:
-						await ws.send('no')
+						await websocket.send('no')
 				elif m := re.fullmatch(r'shoot (\d+),(\d+)', msg):
 					if user.game:
-						await game.tryshoot(user, int(m.group(1)), int(m.group(2)))
+						await user.game.tryshoot(user, int(m.group(1)), int(m.group(2)))
 					else:
-						await ws.send('no')
+						await websocket.send('no')
 				else:
-					await ws.send('no')
+					await websocket.send('no')
 				await aio.sleep(0.1)
 		except exceptions.WebSocketException:
 			return
 		finally:
 			user.switch(False, None)
-			user.ws = None
+			user.websocket = None
 
 	async def pair(self, player1, player2):
-		player1.searching = False
-		player2.searching = False
 		game = Game(player1, player2)
+		player1.switch(False, game)
+		player2.switch(False, game)
 		self.games.append(game)
 		await game.run()
-		old_score1 = player1.score[player2.username]
-		old_score2 = player2.score[player1.username]
-		if game.result == 0:
-			score1 = score2 = 0.5
-		elif game.result == 1:
-			score1, score2 = 1, 0
-		elif game.result == 2:
-			score1, score2 = 0, 1
-		player1.score[player2.username] = (1-self.score_weight)*old_score1 + self.score_weight*score1
-		player2.score[player1.username] = (1-self.score_weight)*old_score2 + self.score_weight*score2
+		player1.score[player2.username] *= 1 - self.score_weight
+		player1.score[player2.username] += self.score_weight * game.result
+		player2.score[player1.username] = 1 - player1.score[player2.username]
 		self.games.remove(game)
 
 	async def pair_players(self):
@@ -225,9 +215,9 @@ class UIServer():
 			username = m.group(1)
 			if username in self.users:
 				self.users[username].kick()
+				self.users.pop(username)
 				for username2 in self.users:
 					self.users[username2].score.pop(username)
-				self.users.pop(username)
 		elif m := re.fullmatch(r'resetpassword (\w{3,13})', cmd):
 			username = m.group(1)
 			if username in self.users:
