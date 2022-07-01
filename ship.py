@@ -1,5 +1,3 @@
-from constants import *
-
 #A rectangle-shaped ship class with collision detection etc.
 class Ship:
 
@@ -17,8 +15,8 @@ class Ship:
 
 	#Checks if the ship is fully contained within the game board.
 	def validate_position(self):
-		validation_x = 0 <= self.rect_x[0] and self.rect_x[1] < BOARD_DIM[0]
-		validation_y = 0 <= self.rect_y[0] and self.rect_y[1] < BOARD_DIM[1]
+		validation_x = 0 <= self.rect_x[0] and self.rect_x[1] < 10
+		validation_y = 0 <= self.rect_y[0] and self.rect_y[1] < 10
 		return validation_x and validation_y
 
 	#Checks if the ship is adjacent to another ship (horizontally, vertically or diagonally).
@@ -36,16 +34,13 @@ class Ship:
 			for y in range(self.rect_y[0], self.rect_y[1] + 1):
 				self.squares[x, y] = True
 
-	#Interacts with a shot targeting (x, y) and returns a signal indicating what happened.
+	#Interacts with a shot targeting (x, y) and returns a string indicating what happened.
 	def get_hit_by(self, x, y):
 		if (x, y) in self.squares:
 			self.squares[x, y] = False
-			if self.is_alive() or not ANNOUNCE_WHEN_SUNK:
-				return SIGNAL_HIT
-			else:
-				return SIGNAL_SUNK
+			return 'hit'
 		else:
-			return SIGNAL_MISS
+			return 'miss'
 
 	#Checks if there are non-hit squares on the ship.
 	def is_alive(self):

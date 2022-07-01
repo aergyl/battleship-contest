@@ -1,8 +1,14 @@
-from constants import *
 from ship import Ship
 
 #A container class for ships.
 class Fleet:
+
+	FLEET_DIM = {
+		(2, 1): 1,
+		(3, 1): 2,
+		(4, 1): 1,
+		(5, 1): 1
+	}
 
 	#Creates an empty fleet.
 	def __init__(self):
@@ -34,25 +40,23 @@ class Fleet:
 				dim_count[ship.dim] += 1
 			else:
 				dim_count[ship.dim] = 1
-		return dim_count == FLEET_DIM
+		return dim_count == self.FLEET_DIM
 
 	#This should be called before starting the game, but only after a successful validation.
 	def setup(self):
 		for ship in self.ships:
 			ship.setup()
 
-	#Interacts with a shot targeting (x, y) and returns a signal indicating what happened.
+	#Interacts with a shot targeting (x, y) and returns a string indicating what happened.
 	def get_hit_by(self, x, y):
 		assert type(x) == type(y) == int
-		assert 0 <= x < BOARD_DIM[0] and 0 <= y < BOARD_DIM[1]
 		for ship in self.ships:
-			signal = ship.get_hit_by(x, y)
-			if signal != SIGNAL_MISS:
+			if ship.get_hit_by(x, y) == 'hit':
 				if self.is_alive():
-					return signal
+					return 'hit'
 				else:
-					return SIGNAL_LOST
-		return SIGNAL_MISS
+					return 'end'
+		return 'miss'
 
 	#Checks if there are any ships alive in the fleet.
 	def is_alive(self):
