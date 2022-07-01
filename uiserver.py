@@ -53,7 +53,7 @@ class Bot:
 class Game:
 
 	TIMELIMIT_BUILD = 2
-	TIMELIMIT_SHOOT = 0.05
+	TIMELIMIT_SHOOT = 0.5
 
 	def __init__(self, player1, player2=None):
 		if player2 is None:
@@ -184,7 +184,7 @@ class UIServer():
 	PORT = 1234
 
 	FPS = 5
-	PAIR_INTERVAL = 5
+	PAIR_INTERVAL = 1
 	LISTEN_PAUSE = 0.1
 
 	RANK_SCALE = 7000
@@ -388,7 +388,7 @@ class UIServer():
 		while True:
 			if self.pairing:
 				players = list(filter(lambda user: user.searching, self.users.values()))
-				if len(players) > 1:
+				if len(players) > 2:
 					aio.create_task(self.run_game(*random.sample(players, 2)))
 			await aio.sleep(interval)
 

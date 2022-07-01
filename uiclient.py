@@ -26,7 +26,7 @@ def game_over(result):
 
 ############################################################
 
-HOST = 'localhost'
+HOST = '192.168.43.56'
 PORT = 1234
 
 USERNAME = ''
@@ -91,24 +91,33 @@ class UIClient:
 	def print(self):
 		terminal_size = os.get_terminal_size()
 		sx, sy = terminal_size.columns, terminal_size.lines
-		s = '\n' * (sy // 2 - 10)
-		for k in range(2):
-			for y in range(10):
-				s += ' ' * (sx // 2 - 10)
-				for x in range(10):
-					if not self.shots[k][x][y]:
-						s += Back.BLACK
-					elif self.shots[k][x][y] == 'hit':
-						s += Back.YELLOW
-					elif self.shots[k][x][y] == 'miss':
-						s += Back.BLUE
-					elif self.shots[k][x][y] == 'end':
-						s += Back.RED
-					s += '  '
-				s += Back.RESET + '\n'
-			s += '\n\n\n'
-		s += '\n' * (sy // 2 - 10)
-		if not self.playing:
+		spacex = sx // 2 - 10
+		spacey = sy // 2 - 11
+		s = '\n' * spacey
+		if self.playing:
+			for k in range(2):
+				for y in range(10):
+					s += ' ' * spacex
+					for x in range(10):
+						if not self.shots[k][x][y]:
+							s += Back.BLACK
+						elif self.shots[k][x][y] == 'hit':
+							s += Back.YELLOW
+						elif self.shots[k][x][y] == 'miss':
+							s += Back.BLUE
+						elif self.shots[k][x][y] == 'end':
+							s += Back.RED
+						s += '  '
+					s += Back.RESET + '\n'
+				if k == 0:
+					s += ' ' * (spacex + 20 - len(self.opponent)) + self.opponent + '\n\n'
+					s += ' ' * spacex + USERNAME + '\n'
+			s += '\n' * (sy - spacey - 23)
+		else:
+			s += '\n' * (sy - 7)
+			s += ' type "search" to play against other people.\n'
+			s += ' type "test" to play against a bot on the server.\n'
+			s += ' to exit the program, use ctrl+c.\n\n\n\n'
 			s += '>>> '
 		print(s, end='')
 
@@ -118,11 +127,12 @@ class UIClient:
 			if message in ('', 'kick'):
 				break
 			elif m := re.fullmatch(r'new (.+?) ([12])', message):
-				self.playing = True
 				self.reset_shots()
+				self.playing = True
 				self.opponent, self.number = m.group(1), int(m.group(2))
-				self.idx = self.number - 1
+				self.idx = 1
 				start_new_game(self.opponent, self.number)
+				self.print()
 			elif message == 'build':
 				fleet = build_fleet()
 				await trysend(self.writer, 'build ' + ' '.join(f"{x},{y},{d}" for x, y, d in fleet))
@@ -135,22 +145,19 @@ class UIClient:
 				self.idx = 1 - self.idx
 				oppshot(*self.shot)
 			elif message in ('hit', 'miss', 'end'):
-				self.shots[self.idx][self.shot[0]][self.shot[1]] = message
 				hit_or_miss(message)
+				self.shots[self.idx][self.shot[0]][self.shot[1]] = message
 				self.print()
 			elif message in ('lost', 'won', 'tie'):
-				self.playing = False
 				game_over(message)
+				self.playing = False
+				self.reset_shots()
 
 	async def command(self):
 		while True:
 			self.print()
 			cmd = await ainput()
-			if cmd == '':
-				self.playing = False
-				self.reset_shots()
-				await trysend(self.writer, 'idle')
-			elif self.playing:
+			if self.playing:
 				pass
 			elif cmd == 'search':
 				await trysend(self.writer, 'search')
