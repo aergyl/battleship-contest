@@ -98,7 +98,7 @@ class Game:
 			pturn = 1 - pturn
 			if pturn == 0:
 				gturn += 1
-			if gturn > 100:
+			if gturn > 1000:
 				self.result = 0.5
 		if self.result == 0:
 			await self.players[0].send('lost')
